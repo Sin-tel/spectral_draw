@@ -1,0 +1,26 @@
+left click: paint
+shift + left click: mix / drag
+ctrl + left click: pick color from canvas
+
+middle mouse: pan
+shift + middle mouse: rotate
+ctrl + middle mouse: scale
+
+C: reset rotation
+V: reset all scale/rotate/pan
+
+Z/A: increase / decrease amount of paint on brush
+
+S: save file
+L: load file
+currently only one savefile is stored!
+
+colors:
+Q: phthaloBlue
+W: titaniumWhite
+E: pyrroleRed
+R: yellowOchre
+T: quinacridoneCrimson
+Y: burntSienna
+U: carbonBlack
+I: rawUmber

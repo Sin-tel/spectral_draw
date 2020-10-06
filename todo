@@ -1,0 +1,22 @@
+color interface (white preblended)
+set bg color
+transfer dry layer (and vice versa)
+
+
+
+
+brush settings:
+ - opacity/loading
+ - size
+ - spacing
+ - blend factor
+ - brush alpha
+ - various pressure sensitivity
+
+blend brush
+ - knife mode (a=1)
+ - mixing strength
+
+color pick texture
+
+mixing palette

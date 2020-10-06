@@ -1,6 +1,6 @@
 # spectral draw
  
-experimental painting app.
+experimental painting app. made with LÖVE https://love2d.org/ (required to run)
 
 instead of drawing in RGB, the visible spectrum is split up in 11 'bins'. 
 

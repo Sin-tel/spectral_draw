@@ -10,3 +10,8 @@ see: http://www.graphics.cornell.edu/~westin/pubs/kubelka.pdf
 
 the spectral reflectance curves for each pigment is taken from:
 https://scholarworks.rit.edu/theses/4892/
+
+
+it should support tablet input on windows (using wintab driver) but this feature is experimental.
+
+for controls see `controls.txt`

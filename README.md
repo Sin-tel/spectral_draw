@@ -15,3 +15,8 @@ https://scholarworks.rit.edu/theses/4892/
 It should support tablet input on windows (using wintab driver) but this feature is experimental.
 
 For controls see `controls.txt`.
+
+
+![screenshot](screen1.PNG)
+![screenshot](screen2.PNG)
+![screenshot](screen3.PNG)

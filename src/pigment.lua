@@ -1,5 +1,5 @@
-local wavelengthToXyzTable = require("spectrum")
-local D65 = require("d65")
+local wavelengthToXyzTable = require("data/spectrum")
+local D65 = require("data/d65")
 
 local Pigment = {}
 

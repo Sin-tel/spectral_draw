@@ -2,7 +2,7 @@ local Tablet = require("tablet")
 local Pigment = require("pigment")
 local transform = require("transform")
 local Compress = require("compress")
-local colors = require("reflectance")
+local colors = require("data/reflectance")
 
 io.stdout:setvbuf("no")
 
@@ -33,12 +33,12 @@ local canvas_3b = love.graphics.newCanvas(w_canvas, h_canvas, { format = tex_for
 
 local canvas_final = love.graphics.newCanvas(w_canvas, h_canvas)
 
-local compShader = love.graphics.newShader("comp.glsl")
-local drawShader = love.graphics.newShader("mdraw.glsl")
-local diffuseShader = love.graphics.newShader("diffuse.glsl")
-local copyShader = love.graphics.newShader("copy.glsl")
-local moveShader = love.graphics.newShader("move.glsl")
-local outlineShader = love.graphics.newShader("outline.glsl")
+local compShader = love.graphics.newShader("shader/comp.glsl")
+local drawShader = love.graphics.newShader("shader/mdraw.glsl")
+local diffuseShader = love.graphics.newShader("shader/diffuse.glsl")
+local copyShader = love.graphics.newShader("shader/copy.glsl")
+local moveShader = love.graphics.newShader("shader/move.glsl")
+local outlineShader = love.graphics.newShader("shader/outline.glsl")
 
 mouseX = 0
 mouseY = 0
@@ -67,7 +67,7 @@ function love.load()
 	--cursor = love.mouse.newCursor("cursor2.png", 30, 30)
 	--love.mouse.setCursor(cursor)
 
-	brush = love.graphics.newImage("brush8.png")
+	brush = love.graphics.newImage("brushes/brush8.png")
 
 	Tablet.init()
 

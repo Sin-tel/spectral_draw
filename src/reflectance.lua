@@ -1,28 +1,18 @@
 --[[
-Source of these:
+Define reflectance curves for colors
+
+360-760 in 10nm increments
+reflectance in %
+
+Source:
 Developing a spectral and colorimetric database of artist paint materials
 by: Yoshio Okumura
 https://scholarworks.rit.edu/theses/4892/
 
-360-760 in 10nm incr
 GOLDEN_matte_varnish_all_sce.txt
-
 ]]
 
-function readRefl(t)
-	local c = {}
-	local floor = math.floor
-	for i, v in ipairs(wavelengths) do
-		local index = (v - 360) / 10
-		local a = index - floor(index)
-
-		c[i] = ((1 - a) * t[floor(index)] + a * t[floor(index) + 1]) / 100
-	end
-
-	return c
-end
-
-colors = {}
+local colors = {}
 
 -- stylua: ignore start
 colors.titaniumWhite = {
@@ -334,3 +324,6 @@ colors.hansaYellowMedium = {
 78.15,78.39,78.45,78.54,78.64,78.70,
 78.57,78.49,78.41,78.13
 }
+
+
+return colors

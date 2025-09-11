@@ -1,37 +1,44 @@
-require("tablet")
-require("pigment")
-require("transform")
-require("zlib")
+local Tablet = require("tablet")
+local Pigment = require("pigment")
+local transform = require("transform")
+local Compress = require("compress")
+local colors = require("reflectance")
 
 io.stdout:setvbuf("no")
 
-w_canvas = 1754
-h_canvas = 1240
+local w_canvas = 1754
+local h_canvas = 1240
 
 width = 800
 height = 600
 
+local mvx, mvy = 0, 0
+
 love.window.setMode(width, height, { vsync = true, resizable = true })
---love.window.setMode(width, height, { vsync = true, fullscreen = false, fullscreentype = "desktop", borderless = false, resizable = true } )
+-- love.window.setMode(
+-- 	width,
+-- 	height,
+-- 	{ vsync = true, fullscreen = false, fullscreentype = "desktop", borderless = false, resizable = true }
+-- )
 
-tex_format = "rgba16f"
+local tex_format = "rgba16f"
 
-canvas_1 = love.graphics.newCanvas(w_canvas, h_canvas, { format = tex_format })
-canvas_2 = love.graphics.newCanvas(w_canvas, h_canvas, { format = tex_format })
-canvas_3 = love.graphics.newCanvas(w_canvas, h_canvas, { format = tex_format })
+local canvas_1 = love.graphics.newCanvas(w_canvas, h_canvas, { format = tex_format })
+local canvas_2 = love.graphics.newCanvas(w_canvas, h_canvas, { format = tex_format })
+local canvas_3 = love.graphics.newCanvas(w_canvas, h_canvas, { format = tex_format })
 
-canvas_1b = love.graphics.newCanvas(w_canvas, h_canvas, { format = tex_format })
-canvas_2b = love.graphics.newCanvas(w_canvas, h_canvas, { format = tex_format })
-canvas_3b = love.graphics.newCanvas(w_canvas, h_canvas, { format = tex_format })
+local canvas_1b = love.graphics.newCanvas(w_canvas, h_canvas, { format = tex_format })
+local canvas_2b = love.graphics.newCanvas(w_canvas, h_canvas, { format = tex_format })
+local canvas_3b = love.graphics.newCanvas(w_canvas, h_canvas, { format = tex_format })
 
-canvas_final = love.graphics.newCanvas(w_canvas, h_canvas)
+local canvas_final = love.graphics.newCanvas(w_canvas, h_canvas)
 
-compShader = love.graphics.newShader("comp.glsl")
-drawShader = love.graphics.newShader("mdraw.glsl")
-diffuseShader = love.graphics.newShader("diffuse.glsl")
-copyShader = love.graphics.newShader("copy.glsl")
-moveShader = love.graphics.newShader("move.glsl")
-outlineShader = love.graphics.newShader("outline.glsl")
+local compShader = love.graphics.newShader("comp.glsl")
+local drawShader = love.graphics.newShader("mdraw.glsl")
+local diffuseShader = love.graphics.newShader("diffuse.glsl")
+local copyShader = love.graphics.newShader("copy.glsl")
+local moveShader = love.graphics.newShader("move.glsl")
+local outlineShader = love.graphics.newShader("outline.glsl")
 
 mouseX = 0
 mouseY = 0
@@ -39,10 +46,13 @@ mouseY = 0
 alpha = 0.5
 
 pmouseX, pmouseY = 0, 0
-time = 0
+local time = 0
 
-angle = 0
-ax, ay = 0, 0
+local first
+local brush
+local hourglass
+
+local angle = 0
 
 mouseDown = {}
 
@@ -57,7 +67,7 @@ function love.load()
 	--cursor = love.mouse.newCursor("cursor2.png", 30, 30)
 	--love.mouse.setCursor(cursor)
 
-	brush = love.graphics.newImage("brush.png")
+	brush = love.graphics.newImage("brush8.png")
 
 	Tablet.init()
 
@@ -73,14 +83,16 @@ function love.load()
 	transform.x = 0.5 * (width - w_canvas)
 	transform.y = 0.5 * (height - h_canvas)
 
-	pigment.init()
+	Pigment.init(compShader)
 
-	col = readRefl(colors.greenGold)
+	col = Pigment.read(colors.cobaltBlue)
 
 	local l = 0.5
 	local bg = { l, l, l, l, l, l, l, l, l, l, l }
-	--local bg = readRefl(colors.titaniumWhite)
+	--local bg = Pigment.read(colors.titaniumWhite)
 	local th = 0.001
+
+	local RtoA = Pigment.RtoA
 
 	love.graphics.setCanvas(canvas_1)
 	love.graphics.clear(th * RtoA(bg[1]), th * RtoA(bg[2]), th * RtoA(bg[3]), th * RtoA(bg[4]))
@@ -123,8 +135,8 @@ function love.update(dt)
 	--mouseX,mouseY = love.mouse.getPosition()
 	local mvx2, mvy2 = mouseX - pmouseX, mouseY - pmouseY
 
-	local x1, y1 = invTransform(pmouseX, pmouseY)
-	local x2, y2 = invTransform(mouseX, mouseY)
+	local x1, y1 = transform.inverse(pmouseX, pmouseY)
+	local x2, y2 = transform.inverse(mouseX, mouseY)
 	mvx, mvy = x2 - x1, y2 - y1
 
 	time = time + dt
@@ -134,8 +146,8 @@ function love.update(dt)
 		if l < 1 then
 			l = 1
 		end
-		ax = math.cos(angle)
-		ay = math.sin(angle)
+		local ax = math.cos(angle)
+		local ay = math.sin(angle)
 		local s = (ax * mvx2 + ay * mvy2)
 		if s > 0 then
 			s = 1
@@ -144,11 +156,11 @@ function love.update(dt)
 		end
 		angle = angle + 0.1 * (ax * mvy2 - ay * mvx2) * s / l
 	end
-	if rot and tabletInput then
+	if rot and Tablet.input then
 		angle = rot
 	end
 
-	transform.update()
+	transform.update(compShader)
 end
 
 function love.draw()
@@ -176,7 +188,7 @@ function love.draw()
 
 				love.graphics.push()
 
-				local mx, my = invTransform(pmouseX, pmouseY)
+				local mx, my = transform.inverse(pmouseX, pmouseY)
 				mx = mx + t * mvx
 				my = my + t * mvy
 				love.graphics.translate(mx, my)
@@ -206,7 +218,7 @@ function love.draw()
 			local t = i / div
 
 			love.graphics.push()
-			local mx, my = invTransform(pmouseX, pmouseY)
+			local mx, my = transform.inverse(pmouseX, pmouseY)
 			mx = mx + t * mvx
 			my = my + t * mvy
 			love.graphics.translate(mx, my)
@@ -282,21 +294,21 @@ function love.keypressed(key, isrepeat)
 	if key == "escape" then
 		love.event.quit()
 	elseif key == "q" then
-		col = readRefl(colors.cobaltBlue)
+		col = Pigment.read(colors.cobaltBlue)
 	elseif key == "w" then
-		col = readRefl(colors.titaniumWhite)
+		col = Pigment.read(colors.titaniumWhite)
 	elseif key == "e" then
-		col = readRefl(colors.pyrroleRed)
+		col = Pigment.read(colors.pyrroleRed)
 	elseif key == "r" then
-		col = readRefl(colors.yellowOchre)
+		col = Pigment.read(colors.yellowOchre)
 	elseif key == "t" then
-		col = readRefl(colors.rawUmber)
+		col = Pigment.read(colors.rawUmber)
 	elseif key == "y" then
-		col = readRefl(colors.burntSienna)
+		col = Pigment.read(colors.burntSienna)
 	elseif key == "u" then
-		col = readRefl(colors.carbonBlack)
+		col = Pigment.read(colors.carbonBlack)
 	elseif key == "i" then
-		col = readRefl(colors.chromiumOxideGreen)
+		col = Pigment.read(colors.chromiumOxideGreen)
 	elseif key == "a" then
 		alpha = alpha * 2
 		if alpha > 1 then
@@ -320,18 +332,18 @@ function love.keypressed(key, isrepeat)
 		love.mouse.setVisible(true)
 		love.mouse.setCursor(hourglass)
 
-		data1 = canvas_1:newImageData()
-		data2 = canvas_2:newImageData()
-		data3 = canvas_3:newImageData()
+		local data1 = canvas_1:newImageData()
+		local data2 = canvas_2:newImageData()
+		local data3 = canvas_3:newImageData()
 
 		local s1 = data1:getString()
 		local s2 = data2:getString()
 		local s3 = data3:getString()
 
 		print("compressing...")
-		s1 = compress(s1)
-		s2 = compress(s2)
-		s3 = compress(s3)
+		s1 = Compress.compress(s1)
+		s2 = Compress.compress(s2)
+		s3 = Compress.compress(s3)
 
 		love.filesystem.write("s1", s1)
 		love.filesystem.write("s2", s2)
@@ -348,9 +360,9 @@ function love.keypressed(key, isrepeat)
 		local s3 = love.filesystem.read("s3")
 
 		print("decompressing...")
-		s1 = uncompress(s1, 8 * w_canvas * h_canvas)
-		s2 = uncompress(s2, 8 * w_canvas * h_canvas)
-		s3 = uncompress(s3, 8 * w_canvas * h_canvas)
+		s1 = Compress.decompress(s1, 8 * w_canvas * h_canvas)
+		s2 = Compress.decompress(s2, 8 * w_canvas * h_canvas)
+		s3 = Compress.decompress(s3, 8 * w_canvas * h_canvas)
 
 		local image1 = love.graphics.newImage(love.image.newImageData(w_canvas, h_canvas, tex_format, s1))
 		local image2 = love.graphics.newImage(love.image.newImageData(w_canvas, h_canvas, tex_format, s2))
@@ -379,14 +391,14 @@ function love.keypressed(key, isrepeat)
 end
 
 function love.mousepressed(x, y, button)
-	if not tabletInput then
+	if not Tablet.input then
 		pres = 0.5
 		mousepressed(button)
 	end
 end
 
 function love.mousereleased(x, y, button)
-	if not tabletInput then
+	if not Tablet.input then
 		pres = 0
 		mousereleased(button)
 	end
@@ -407,12 +419,12 @@ function mousepressed(button)
 
 	first = true
 	if love.keyboard.isDown("lctrl") and button == 1 then
-		local x, y = invTransform(mouseX, mouseY)
+		local x, y = transform.inverse(mouseX, mouseY)
 		local data1 = canvas_1:newImageData()
 		local data2 = canvas_2:newImageData()
 		local data3 = canvas_3:newImageData()
 
-		local th = 0
+		local th
 		local c = {}
 		c[1], c[2], c[3], c[4] = data1:getPixel(x, y)
 		c[5], c[6], c[7], c[8] = data2:getPixel(x, y)
@@ -420,7 +432,7 @@ function mousepressed(button)
 
 		print(c[1], c[2], c[3])
 		for i, v in ipairs(c) do
-			col[i] = AtoR(v / th)
+			col[i] = Pigment.AtoR(v / th)
 		end
 	end
 end

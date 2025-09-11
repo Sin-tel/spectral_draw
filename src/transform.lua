@@ -1,10 +1,10 @@
-transform = {}
+local transform = {}
 transform.s = 1.0
 transform.x = 0
 transform.y = 0
 transform.r = 0
 
-function transform.update()
+function transform.update(compShader)
 	if mouseDown[3] then
 		if love.keyboard.isDown("lshift") then
 			local x1, y1 = pmouseX - 0.5 * width, pmouseY - 0.5 * height
@@ -49,7 +49,7 @@ function transform.update()
 	end
 end
 
-function invTransform(xx, yy)
+function transform.inverse(xx, yy)
 	--[[
 	love.graphics.translate(0.5*width, 0.5*height)
 	love.graphics.scale(transform.s, transform.s)
@@ -68,3 +68,5 @@ function invTransform(xx, yy)
 	y = y + 0.5 * height - transform.y
 	return x, y
 end
+
+return transform

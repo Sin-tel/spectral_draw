@@ -1,8 +1,12 @@
 local ffi = require("ffi")
 
-tabletInput = false
+local Tablet = {}
+Tablet.input = false
 
-Tablet = {}
+local wt
+local glogContext
+local hctx
+local pressureLimits
 
 function Tablet.init()
 	local ok, lib = pcall(ffi.load, "wintab32.dll")
@@ -72,7 +76,7 @@ function Tablet.init()
 
 		print("get sdl window handle")
 		print(sdl.SDL_GetWindowWMInfo(sdlWindow, wmInfo))
-		hwnd = wmInfo[0].info.win.window
+		local hwnd = wmInfo[0].info.win.window
 		print(hwnd)
 
 		--winapi and wintab typedefs
@@ -143,7 +147,7 @@ function Tablet.init()
 		int orTwist;
 		} ORIENTATION;
 
-		typedef struct tagROTATION { 
+		typedef struct tagROTATION {
 		int roPitch;
 		int roRoll;
 		int roYaw;
@@ -227,12 +231,12 @@ end
 function Tablet.update()
 	if wt then
 		--get max 20 packets (should be more than enough, my tablet sends packets at 250Hz)
-		pkt = ffi.new("PACKET[20]", {})
+		local pkt = ffi.new("PACKET[20]", {})
 		local npkt = wt.WTPacketsGet(hctx, 20, pkt)
 
 		if npkt > 0 then
-			tabletInput = true
-			local i = npkt - 1
+			Tablet.input = true
+
 			for i = 0, npkt - 1 do
 				local b = pkt[i].pkButtons
 				if b > 0 then
@@ -254,7 +258,7 @@ function Tablet.update()
 
 				--[[
 
-				typedef struct tagROTATION { 
+				typedef struct tagROTATION {
 				int roPitch;
 				int roRoll;
 				int roYaw;
@@ -265,24 +269,19 @@ function Tablet.update()
 				--print(pkt[i].pkRotation.roPitch/10, pkt[i].pkRotation.roRoll/10)
 			end
 
+			local i = npkt - 1
 			pres = pkt[i].pkNormalPressure / pressureLimits[0].axMax
 			--pres = pres*pres --add curve
 
-			xo, yo, display = love.window.getPosition()
-			--w, h = love.window.getDesktopDimensions(display)
+			local xo, yo, _ = love.window.getPosition()
 
 			mouseX, mouseY = pkt[i].pkX - xo, -yo - pkt[i].pkY + glogContext[0].lcSysExtY
 		else
-			tabletInput = false
+			Tablet.input = false
 			mouseX, mouseY = love.mouse.getPosition()
-			--[[if love.mouse.isDown(1) then
-				pres=0.5
-			else
-				pres= 0
-				end]]
 		end
 	else
-		tabletInput = false
+		Tablet.input = false
 		mouseX, mouseY = love.mouse.getPosition()
 	end
 end
@@ -292,3 +291,5 @@ function Tablet.close()
 		wt.WTClose(hctx)
 	end
 end
+
+return Tablet

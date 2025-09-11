@@ -8,6 +8,18 @@ stds.project = {
    globals = {
       "width",
       "height",
+      "mouseX",
+      "mouseY",
+      "pmouseX",
+      "pmouseY",
+      "mousepressed",
+      "mousereleased",
+      "mouseDown",
+      "pres",
+      "erase",
+      "rot",
+      "col",
+      "alpha",
    },
    read_globals = {},
 }

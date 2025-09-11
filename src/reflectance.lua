@@ -12,12 +12,11 @@ GOLDEN_matte_varnish_all_sce.txt
 function readRefl(t)
 	local c = {}
 	local floor = math.floor
-	for i,v in ipairs(wavelengths) do
-		local index = (v-360)/10
+	for i, v in ipairs(wavelengths) do
+		local index = (v - 360) / 10
 		local a = index - floor(index)
 
-
-		c[i] = ((1-a)*t[floor(index)] + a*t[floor(index)+1])/100
+		c[i] = ((1 - a) * t[floor(index)] + a * t[floor(index) + 1]) / 100
 	end
 
 	return c
@@ -25,6 +24,7 @@ end
 
 colors = {}
 
+-- stylua: ignore start
 colors.titaniumWhite = {
 	0.88,0.86,0.89,3.82,21.78,54.36,
 	77.73,85.41,86.90,87.33,87.56,87.69,

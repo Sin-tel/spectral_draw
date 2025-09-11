@@ -1,23 +1,20 @@
 local ffi = require("ffi")
 
-
 tabletInput = false
 
 Tablet = {}
 
 function Tablet.init()
-	local ok,lib = pcall(ffi.load, "wintab32.dll")
+	local ok, lib = pcall(ffi.load, "wintab32.dll")
 
 	print("CHECK", ok, lib)
 	if ok then
 		wt = lib
 
-
-		local sdl = ffi.load 'SDL2'
-
+		local sdl = ffi.load("SDL2")
 
 		--SDL typedefs
-		ffi.cdef [[
+		ffi.cdef([[
 		typedef void SDL_Window;
 		typedef enum
 		{
@@ -32,9 +29,9 @@ function Tablet.init()
 
 		typedef struct SDL_version
 		{
-		unsigned char major;        
-		unsigned char minor;       
-		unsigned char patch;     
+		unsigned char major;
+		unsigned char minor;
+		unsigned char patch;
 		} SDL_version;
 
 		typedef enum
@@ -61,25 +58,25 @@ function Tablet.init()
 		} info;
 		} SDL_SysWMinfo;
 
-		]]
+		]])
 
 		--get the window handle from SDL
-		ffi.cdef [[
+		ffi.cdef([[
 		SDL_Window* SDL_GL_GetCurrentWindow (void);
 		SDL_bool SDL_GetWindowWMInfo(SDL_Window* window, SDL_SysWMinfo* wmInfo);
-		]]
+		]])
 
 		local sdlWindow = sdl.SDL_GL_GetCurrentWindow()
 
 		local wmInfo = ffi.new("SDL_SysWMinfo[1]", {})
 
 		print("get sdl window handle")
-		print(sdl.SDL_GetWindowWMInfo(sdlWindow, wmInfo));
-		hwnd = wmInfo[0].info.win.window;
+		print(sdl.SDL_GetWindowWMInfo(sdlWindow, wmInfo))
+		hwnd = wmInfo[0].info.win.window
 		print(hwnd)
 
 		--winapi and wintab typedefs
-		ffi.cdef[[
+		ffi.cdef([[
 		typedef unsigned int UINT;
 		typedef char TCHAR;
 		typedef unsigned long DWORD;
@@ -173,11 +170,9 @@ function Tablet.init()
 		HCTX WTOpenA(HWND hWnd, LPLOGCONTEXT lpLogCtx,BOOL fEnable);
 		BOOL WTClose(HCTX hCtx);
 		int WTPacketsGet(HCTX hCtx,int cMaxPkts,LPVOID lpPkts);
-		]]
+		]])
 
 		print("setup wintab")
-
-		
 
 		assert(wt.WTInfoA(0, 0, nil), "WinTab Services Not Available.")
 
@@ -190,15 +185,14 @@ function Tablet.init()
 
 		glogContext[0].lcOptions = 1 --glogContext.lcOptions |= CXO_SYSTEM;
 
-
-		wt.WTInfoA(4, 0, glogContext); -- WTI_DEFSYSCTX = 4
+		wt.WTInfoA(4, 0, glogContext) -- WTI_DEFSYSCTX = 4
 
 		--We process WT_PACKET (CXO_MESSAGES) messages.
-		glogContext[0].lcOptions = glogContext[0].lcOptions + 4 
+		glogContext[0].lcOptions = glogContext[0].lcOptions + 4
 		-- What data items we want to be included in the tablet packets
 		-- glogContext.lcPktData = PACKETDATA;
 		-- PACKETDATA = (PK_X | PK_Y | PK_BUTTONS | PK_NORMAL_PRESSURE | PK_CURSOR | PK_ROTATION)
-		glogContext[0].lcPktData = 0x35E0 --0x5E0 
+		glogContext[0].lcPktData = 0x35E0 --0x5E0
 		-- Which packet items should show change in value since the last
 		-- packet (referred to as 'relative' data) and which items
 		-- should be 'absolute'.
@@ -212,11 +206,9 @@ function Tablet.init()
 		glogContext[0].lcMoveMask = glogContext[0].lcPktData
 		-- Which buttons events will be handled by this context.  lcBtnMask
 		-- is a bitfield with one bit per button.
-		glogContext[0].lcBtnUpMask = glogContext[0].lcBtnDnMask;
+		glogContext[0].lcBtnUpMask = glogContext[0].lcBtnDnMask
 
-
-
-		hctx = wt.WTOpenA( hwnd, glogContext, 1);
+		hctx = wt.WTOpenA(hwnd, glogContext, 1)
 		print(hctx)
 
 		--[[print("-------")
@@ -236,16 +228,16 @@ function Tablet.update()
 	if wt then
 		--get max 20 packets (should be more than enough, my tablet sends packets at 250Hz)
 		pkt = ffi.new("PACKET[20]", {})
-		local npkt = wt.WTPacketsGet(hctx,20,pkt)
-		
+		local npkt = wt.WTPacketsGet(hctx, 20, pkt)
+
 		if npkt > 0 then
 			tabletInput = true
-			local i = npkt - 1 
-			for i = 0,npkt-1 do
+			local i = npkt - 1
+			for i = 0, npkt - 1 do
 				local b = pkt[i].pkButtons
-				if b > 0 then		
+				if b > 0 then
 					local b1 = b % 0x10000
-					local b2 = math.floor(b/ 0xFFFF)
+					local b2 = math.floor(b / 0xFFFF)
 					local button = 1
 					if b1 == 2 then
 						button = 2
@@ -259,7 +251,7 @@ function Tablet.update()
 					end
 				end
 				erase = pkt[i].pkCursor == 2
-				
+
 				--[[
 
 				typedef struct tagROTATION { 
@@ -268,38 +260,35 @@ function Tablet.update()
 				int roYaw;
 				} ROTATION;
 				]]
-				rot = (pkt[i].pkRotation.roPitch/10)*math.pi/180
+				rot = (pkt[i].pkRotation.roPitch / 10) * math.pi / 180
 
 				--print(pkt[i].pkRotation.roPitch/10, pkt[i].pkRotation.roRoll/10)
 			end
-			
 
 			pres = pkt[i].pkNormalPressure / pressureLimits[0].axMax
 			--pres = pres*pres --add curve
 
-			xo, yo, display = love.window.getPosition( )
+			xo, yo, display = love.window.getPosition()
 			--w, h = love.window.getDesktopDimensions(display)
 
-			
-
-			mouseX, mouseY = pkt[i].pkX-xo, -yo-pkt[i].pkY+glogContext[0].lcSysExtY
+			mouseX, mouseY = pkt[i].pkX - xo, -yo - pkt[i].pkY + glogContext[0].lcSysExtY
 		else
 			tabletInput = false
-			mouseX,mouseY = love.mouse.getPosition()
+			mouseX, mouseY = love.mouse.getPosition()
 			--[[if love.mouse.isDown(1) then
 				pres=0.5
 			else
 				pres= 0
 				end]]
-			end
-		else
-			tabletInput = false
-			mouseX,mouseY = love.mouse.getPosition()
 		end
+	else
+		tabletInput = false
+		mouseX, mouseY = love.mouse.getPosition()
 	end
+end
 
-	function Tablet.close()
-		if wt then
-			wt.WTClose(hctx)
-		end
+function Tablet.close()
+	if wt then
+		wt.WTClose(hctx)
 	end
+end
